@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API REST - Autenticação JWT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #1e3c72;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #888;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: #1e3c72;
+            border-bottom-color: #1e3c72;
+        }
+        
+        .form {
+            display: none;
+        }
+        
+        .form.active {
+            display: block;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #444;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+        
+        button {
+            width: 100%;
+            padding: 13px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #2a5298;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            word-break: break-all;
+            display: none;
+        }
+        
+        .result.success {
+            background: #e6f7ed;
+            color: #0a6b35;
+            display: block;
+        }
+        
+        .result.error {
+            background: #fdeaea;
+            color: #c0392b;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔐 API REST</h1>
+        <p class="subtitle">Autenticação com JWT</p>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('login')">Login</div>
+            <div class="tab" onclick="switchTab('register')">Cadastro</div>
+        </div>
+
+        <div id="login" class="form active">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="seu@email.com">
+            <label>Senha</label>
+            <input type="password" id="loginPassword" placeholder="••••••">
+            <button onclick="login()">Entrar</button>
+        </div>
+
+        <div id="register" class="form">
+            <label>Nome</label>
+            <input type="text" id="regName" placeholder="Seu nome">
+            <label>Email</label>
+            <input type="email" id="regEmail" placeholder="seu@email.com">
+            <label>Senha</label>
+            <input type="password" id="regPassword" placeholder="••••••">
+            <button onclick="register()">Cadastrar</button>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:8081';
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+            document.getElementById('result').className = 'result';
+        }
+
+        function showResult(message, isError) {
+            const result = document.getElementById('result');
+            result.textContent = message;
+            result.className = 'result ' + (isError ? 'error' : 'success');
+        }
+
+        async function register() {
+            const data = {
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value
+            };
+            try {
+                const res = await fetch(API + '/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    showResult('✅ Cadastro realizado! Token: ' + json.token, false);
+                } else {
+                    showResult('❌ Erro no cadastro', true);
+                }
+            } catch (e) {
+                showResult('❌ Erro ao conectar com a API', true);
+            }
+        }
+
+        async function login() {
+            const data = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+            try {
+                const res = await fetch(API + '/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+                if (res.ok) {
+                    showResult('✅ Login realizado! Token: ' + json.token, false);
+                } else {
+                    showResult('❌ Email ou senha incorretos', true);
+                }
+            } catch (e) {
+                showResult('❌ Erro ao conectar com a API', true);
+            }
+        }
+    </script>
+</body>
+
+</html>
